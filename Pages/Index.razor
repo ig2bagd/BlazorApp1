@@ -1,0 +1,70 @@
+﻿@page "/"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+
+<PageTitle>Index</PageTitle>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+
+Enter text:
+<input @bind="content" />
+<button class="btn btn-primary" @onclick="OnClickButton">Click</button>
+
+<br />
+<h4>Call JS Example</h4>
+<p>
+   <button @onclick="TriggerPrompt">Trigger browser window prompt</button>
+</p>
+<p>
+   @result
+</p>
+
+@code {
+   private string content { get; set; } = default!;
+   private IJSObjectReference? module;
+   private string? result;
+
+   private async void OnClickButton()
+   {
+      var jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./script/isolationScript.js");
+      await jsModule.InvokeVoidAsync("jsIsolation", content);
+   }
+
+   protected override async Task OnAfterRenderAsync(bool firstRender)
+   {
+      if (firstRender)
+      {
+         module = await JS.InvokeAsync<IJSObjectReference>("import", "./script/isolationScript.js");
+      }
+
+      // Using TypeScript
+      // Get a reference to our helpers.Logger class.
+      var jsObject = await this.JS.InvokeAsync<IJSObjectReference>("helpers.getLogger");
+      // Invoke the log method
+      await jsObject.InvokeVoidAsync("log", $"LOG {DateTime.Now} - OnAfterRenderAsync called.");
+      // clean up
+      await jsObject.DisposeAsync();
+   }
+
+   private async Task TriggerPrompt()
+   {
+      result = await Prompt("Provide some text");
+   }
+
+   public async ValueTask<string?> Prompt(string message) =>
+       module is not null ?
+           await module.InvokeAsync<string>("showPrompt", message) : null;
+
+   async ValueTask IAsyncDisposable.DisposeAsync()
+   {
+      if (module is not null)
+      {
+         await module.DisposeAsync();
+      }
+   }
+
+} 
