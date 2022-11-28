@@ -1,11 +1,17 @@
 ﻿@page "/"
+@using BlazorApp1.Services;
+
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
+@inject ICircuitUserService UserService
+@inject CircuitHandler BlazorCircuitHandler
 
 <PageTitle>Index</PageTitle>
 
-Welcome to your new app.
+<h1>@MyUserId</h1>
+<div>@MyCircuitMessage</div>
+<div>There are @UserService.Circuits.Count Users Connected</div>
 
 <SurveyPrompt Title="How is Blazor working for you?" />
 
